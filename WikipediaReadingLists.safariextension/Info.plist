@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Author</key>
+	<string>Wikimedia Foundation</string>
+	<key>Builder Version</key>
+	<string>13605.1.33.1.4</string>
+	<key>CFBundleDisplayName</key>
+	<string>Wikipedia Reading Lists</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.wikipedia.addtoreadinglist</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>Chrome</key>
+	<dict>
+		<key>Global Page</key>
+		<string>global.html</string>
+		<key>Popovers</key>
+		<array>
+			<dict>
+				<key>Filename</key>
+				<string>popup.html</string>
+				<key>Height</key>
+				<integer>0</integer>
+				<key>Identifier</key>
+				<string>addToReadingListPopover</string>
+				<key>Width</key>
+				<integer>0</integer>
+			</dict>
+		</array>
+		<key>Toolbar Items</key>
+		<array>
+			<dict>
+				<key>Identifier</key>
+				<string>wikiAddToReadingList</string>
+				<key>Image</key>
+				<string>Icon-64.png</string>
+				<key>Include By Default</key>
+				<true/>
+				<key>Label</key>
+				<string>Add to reading list</string>
+				<key>Palette Label</key>
+				<string>Add to reading list</string>
+				<key>Popover</key>
+				<string>addToReadingListPopover</string>
+				<key>Tool Tip</key>
+				<string>Add this page to your Wikipedia reading list</string>
+			</dict>
+		</array>
+	</dict>
+	<key>Content</key>
+	<dict>
+		<key>Scripts</key>
+		<dict>
+			<key>End</key>
+			<array>
+				<string>injected.js</string>
+			</array>
+		</dict>
+	</dict>
+	<key>Description</key>
+	<string>Save Wikipedia articles to read on Wikipedia’s iOS and Android apps</string>
+	<key>DeveloperIdentifier</key>
+	<string>AKK7J2GV64</string>
+	<key>ExtensionInfoDictionaryVersion</key>
+	<string>1.0</string>
+	<key>Permissions</key>
+	<dict>
+		<key>Website Access</key>
+		<dict>
+			<key>Allowed Domains</key>
+			<array>
+				<string>*.wikipedia.org</string>
+				<string>*.wikidata.org</string>
+				<string>*.wikivoyage.org</string>
+				<string>*.wiktionary.org</string>
+				<string>*.wikibooks.org</string>
+				<string>*.mediawiki.org</string>
+				<string>*.wikisource.org</string>
+				<string>*.wikiversity.org</string>
+				<string>*.wikinews.org</string>
+				<string>*.wikiquote.org</string>
+				<string>*.wikimedia.org</string>
+			</array>
+			<key>Include Secure Pages</key>
+			<true/>
+			<key>Level</key>
+			<string>Some</string>
+		</dict>
+	</dict>
+	<key>Website</key>
+	<string>https://www.wikimediafoundation.org</string>
+</dict>
+</plist>
