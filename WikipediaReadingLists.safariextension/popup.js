@@ -124,7 +124,6 @@ function resetContentDivs(doc) {
 
 function show(popover, id) {
     const doc = popover.contentWindow.document;
-    resetContentDivs(doc);
     doc.getElementById(id).style.display = 'block';
     popover.height = doc.body.clientHeight + 35;
     popover.width = doc.body.clientWidth + 35;
@@ -237,8 +236,12 @@ safari.application.addEventListener('message', (event) => {
 });
 
 safari.application.addEventListener('popover', (event) => {
-    const popover = event.target;
     const tab = safari.application.activeBrowserWindow.activeTab;
+    const popover = event.target;
+    const doc = popover.contentWindow.document;
+    resetContentDivs(doc);
+    popover.height = 35;
+    popover.width = 35;
     tab.page.dispatchMessage('wikiExtensionGetPageTitle');
     const urlString = tab.url;
     if (urlString) {
