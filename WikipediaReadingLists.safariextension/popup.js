@@ -1,4 +1,6 @@
-let canonicalPageTitle;
+function getPopover() {
+    return safari.extension.toolbarItems.find(item => item.identifier === 'wikiAddToReadingList').popover;
+}
 
 const MESSAGE_KEYS = {
     enableSync: 'readinglists-browser-enable-sync-prompt',
@@ -8,7 +10,7 @@ const MESSAGE_KEYS = {
     loginButtonText: 'login',
     loginPrompt: 'readinglists-browser-login-prompt',
     success: 'readinglists-browser-add-entry-success'
-}
+};
 
 const ALLMESSAGES_QUERY = {
     action: 'query',
@@ -20,22 +22,6 @@ const ALLMESSAGES_QUERY = {
 
 function objToQueryString(obj) {
     return Object.keys(obj).map(key => `${key}=${obj[key]}`).join('&');
-}
-
-function getReadingListsUrlForOrigin(origin, next) {
-    let result = `${origin}/api/rest_v1/data/lists/`;
-    if (next) {
-        result = result.concat(`?next=${next}`);
-    }
-    return result;
-}
-
-function readingListPostEntryUrlForOrigin(origin, listId, token) {
-    return `${origin}/api/rest_v1/data/lists/${listId}/entries/?csrf_token=${encodeURIComponent(token)}`;
-}
-
-function csrfFetchUrlForOrigin(origin) {
-    return `${origin}/w/api.php?action=query&format=json&formatversion=2&meta=tokens&type=csrf`;
 }
 
 function geti18nMessageUrl(origin, keys) {
@@ -60,7 +46,7 @@ function getBundledMessage(lang, keys) {
  * Get UI messages from the MediaWiki API (in the user's preferred UI lang), falling back to bundled
  * English strings if this fails.
  * @param {string} origin the origin of the site URL
- * @param {Array[string]} keys message keys to request
+ * @param {Array<string>} keys message keys to request
  */
 function geti18nMessages(origin, keys) {
     return fetch(geti18nMessageUrl(origin, keys), { credentials: 'same-origin' })
@@ -84,42 +70,13 @@ function geti18nMessages(origin, keys) {
     });
 }
 
-function getCsrfToken(origin) {
-    return fetch(csrfFetchUrlForOrigin(origin), { credentials: 'same-origin' })
-    .then(res => res.json())
-    .then(res => res.query.tokens.csrftoken);
-}
-
-function getDefaultListId(url, next) {
-    return fetch(getReadingListsUrlForOrigin(url.origin, next), { credentials: 'same-origin' })
-    .then(res => {
-        if (res.status < 200 || res.status > 399) {
-            return res.json().then(res => {
-                throw res;
-            });
-        } else {
-            return res.json();
-        }
-    })
-    .then(res => {
-        const defaultList = res.lists.filter(list => list.default)[0];
-        if (defaultList) {
-            return defaultList.id;
-        } else if (res.next) {
-            return getDefaultListId(url, res.next);
-        } else {
-            throw new Error("no default list");
-        }
-    });
+function resetContentDivs(doc) {
+    doc.querySelectorAll('.container').forEach(div => div.style.display = 'none');
 }
 
 function parseTitleFromUrl(href) {
     const url = new URL(href);
     return url.searchParams.has('title') ? url.searchParams.get('title') : url.pathname.replace('/wiki/', '');
-}
-
-function resetContentDivs(doc) {
-    doc.querySelectorAll('.container').forEach(div => div.style.display = 'none');
 }
 
 function show(popover, id) {
@@ -129,7 +86,8 @@ function show(popover, id) {
     popover.width = doc.body.clientWidth + 35;
 }
 
-function showLoginPage(url, tab, title) {
+function showLoginPage(url, tab) {
+    const title = parseTitleFromUrl(url.href);
     let loginUrl = `${url.origin}/wiki/Special:UserLogin?returnto=${encodeURIComponent(title)}`;
     if (url.search) {
         loginUrl = loginUrl.concat(`&returntoquery=${encodeURIComponent(url.search.slice(1))}`);
@@ -139,25 +97,24 @@ function showLoginPage(url, tab, title) {
 
 function showLoginPrompt(popover, tab, url) {
     return geti18nMessages(url.origin, [ MESSAGE_KEYS.loginPrompt, MESSAGE_KEYS.loginButtonText ])
-    .then(messages => getCanonicalPageTitle(tab)
-    .then(title => {
+    .then(messages => {
         const doc = popover.contentWindow.document;
         doc.getElementById('loginPromptText').textContent = messages[MESSAGE_KEYS.loginPrompt];
         doc.getElementById('loginButton').textContent = messages[MESSAGE_KEYS.loginButtonText];
-        doc.getElementById('loginButton').onclick = () => showLoginPage(url, tab, title);
+        doc.getElementById('loginButton').onclick = () => showLoginPage(url, tab);
         show(popover, 'loginPromptContainer');
-    }));
+    });
 }
 
 function showAddToListSuccessMessage(popover, tab, url) {
     return geti18nMessages(url.origin, [ MESSAGE_KEYS.success ])
-    .then(messages => getCanonicalPageTitle(tab)
-    .then(title => {
+    .then(messages => {
+        const title = parseTitleFromUrl(url.href);
         const message = messages[MESSAGE_KEYS.success].replace('$1', title.replace(/_/g, ' '));
         const doc = popover.contentWindow.document;
         doc.getElementById('successText').textContent = message;
         show(popover, 'addToListSuccessContainer');
-    }));
+    });
 }
 
 function showAddToListFailureMessage(popover, tab, url, res) {
@@ -188,50 +145,33 @@ function showAddToListFailureMessage(popover, tab, url, res) {
     });
 }
 
-function mobileToCanonicalHost(url) {
-    url.hostname = url.hostname.replace(/^m\./, '').replace('.m.', '.');
-    return url;
-}
-
-function getAddToListPostBody(url, title) {
-    return `project=${mobileToCanonicalHost(url).origin}&title=${encodeURIComponent(title)}`;
-}
-
-function getAddToListPostOptions(url, title) {
-    return {
-        method: 'POST',
-        headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        credentials: 'same-origin',
-        body: getAddToListPostBody(url, title)
+function showAddPageToListResult(popover, tab, url, res) {
+    if (res.id) {
+        showAddToListSuccessMessage(popover, tab, url);
+    } else {
+        showAddToListFailureMessage(popover, tab, url, res);
     }
 }
 
-function handleAddPageToListResult(popover, tab, url, res) {
-    if (res.id) showAddToListSuccessMessage(popover, tab, url); else showAddToListFailureMessage(popover, tab, url, res);
-}
-
-function getCanonicalPageTitle(tab) {
-    return Promise.resolve(canonicalPageTitle);
-}
-
-function addPageToDefaultList(popover, tab, url, listId, token) {
-    return getCanonicalPageTitle(tab)
-    .then(title => fetch(readingListPostEntryUrlForOrigin(url.origin, listId, token), getAddToListPostOptions(url, title)))
-    .then(res => res.json())
-    .then(res => handleAddPageToListResult(popover, tab, url, res));
-}
-
-function handleTokenResult(popover, tab, url, token) {
-    return token === '+\\' ? showLoginPrompt(popover, tab, url) : getDefaultListId(url).then(listId => addPageToDefaultList(popover, tab, url, listId, token));
-}
-
-function handleClick(popover, tab, url) {
-    return getCsrfToken(url.origin).then(token => handleTokenResult(popover, tab, url, token));
-}
-
 safari.application.addEventListener('message', (event) => {
-    if (event.name === 'wikiExtensionSetPageTitle') {
-        canonicalPageTitle = parseTitleFromUrl(event.message);
+    const popover = getPopover();
+    const tab = safari.application.activeBrowserWindow.activeTab;
+    switch (event.name) {
+        case 'wikiExtensionAddPageToReadingList:showLoginPrompt': {
+            const {urlString} = event.message;
+            showLoginPrompt(popover, tab, new URL(urlString));
+            break;
+        }
+        case 'wikiExtensionAddPageToReadingList:showResult': {
+            const {urlString, resString} = event.message;
+            showAddPageToListResult(popover, tab, new URL(urlString), JSON.parse(resString));
+            break;
+        }
+        case 'wikiExtensionAddPageToReadingList:showError': {
+            const {urlString, errString} = event.message;
+            showAddToListFailureMessage(popover, tab, new URL(urlString), errString);
+            break;
+        }
     }
 });
 
@@ -242,10 +182,5 @@ safari.application.addEventListener('popover', (event) => {
     resetContentDivs(doc);
     popover.height = 35;
     popover.width = 35;
-    tab.page.dispatchMessage('wikiExtensionGetPageTitle');
-    const urlString = tab.url;
-    if (urlString) {
-        const url = new URL(urlString);
-        handleClick(popover, tab, url).catch(err => showAddToListFailureMessage(popover, tab, url, err));
-    }
+    tab.page.dispatchMessage('wikiExtensionAddPageToReadingList', tab.url);
 }, true);
