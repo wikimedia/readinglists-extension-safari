@@ -1,5 +1,3 @@
-let canonicalPageTitle;
-
 function dispatchShow(what, message) {
     return Promise.resolve(safari.self.tab.dispatchMessage('wikiExtensionAddPageToReadingList:' + what, message));
 }
@@ -23,13 +21,8 @@ function parseTitleFromUrl(href) {
     return url.searchParams.has('title') ? url.searchParams.get('title') : url.pathname.replace('/wiki/', '');
 }
 
-function getCanonicalPageTitle() {
-    return Promise.resolve(canonicalPageTitle);
-}
-
 function addPageToDefaultList(url, listId, token) {
-    canonicalPageTitle = parseTitleFromUrl(document.querySelector('link[rel=canonical]').href);
-    return getCanonicalPageTitle()
+    return Promise.resolve(parseTitleFromUrl(document.querySelector('link[rel=canonical]').href))
     .then(title => fetch(readingListPostEntryUrlForOrigin(url.origin, listId, token), getAddToListPostOptions(url, title)))
     .then(res => res.json())
     .then(res => dispatchShow('showResult', {urlString: url.href, resString: JSON.stringify(res)}));
