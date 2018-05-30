@@ -92,7 +92,7 @@ safari.self.addEventListener('message', (event) => {
         const urlString = event.message;
         if (urlString) {
             const url = new URL(urlString);
-            handleClick(url).catch(err => dispatchShow('showError', {urlString: url.href, errString: err.toString()}));
+            handleClick(url).catch(err => dispatchShow('showError', {urlString: url.href, errString: JSON.stringify(err)}));
         }
     }
 }, false);
