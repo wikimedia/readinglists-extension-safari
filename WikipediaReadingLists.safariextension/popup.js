@@ -169,7 +169,7 @@ safari.application.addEventListener('message', (event) => {
         }
         case 'wikiExtensionAddPageToReadingList:showError': {
             const {urlString, errString} = event.message;
-            showAddToListFailureMessage(popover, tab, new URL(urlString), errString);
+            showAddToListFailureMessage(popover, tab, new URL(urlString), JSON.parse(errString));
             break;
         }
     }
