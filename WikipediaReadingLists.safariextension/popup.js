@@ -49,7 +49,7 @@ function getBundledMessage(lang, keys) {
  * @param {Array<string>} keys message keys to request
  */
 function geti18nMessages(origin, keys) {
-    return fetch(geti18nMessageUrl(origin, keys), { credentials: 'same-origin' })
+    return fetch(geti18nMessageUrl(origin, keys), { credentials: 'omit' })
     .then(res => {
         if (!res.ok) {
             throw res;
