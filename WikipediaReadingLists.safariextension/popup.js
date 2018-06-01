@@ -106,11 +106,10 @@ function showLoginPrompt(popover, tab, url) {
     });
 }
 
-function showAddToListSuccessMessage(popover, tab, url) {
+function showAddToListSuccessMessage(popover, tab, url, title) {
     return geti18nMessages(url.origin, [ MESSAGE_KEYS.success ])
     .then(messages => {
-        const title = parseTitleFromUrl(url.href);
-        const message = messages[MESSAGE_KEYS.success].replace('$1', title.replace(/_/g, ' '));
+        const message = messages[MESSAGE_KEYS.success].replace('$1', decodeURIComponent(title).replace(/_/g, ' '));
         const doc = popover.contentWindow.document;
         doc.getElementById('successText').textContent = message;
         show(popover, 'addToListSuccessContainer');
@@ -145,9 +144,9 @@ function showAddToListFailureMessage(popover, tab, url, res) {
     });
 }
 
-function showAddPageToListResult(popover, tab, url, res) {
+function showAddPageToListResult(popover, tab, url, title, res) {
     if (res.id) {
-        showAddToListSuccessMessage(popover, tab, url);
+        showAddToListSuccessMessage(popover, tab, url, title);
     } else {
         showAddToListFailureMessage(popover, tab, url, res);
     }
@@ -163,8 +162,8 @@ safari.application.addEventListener('message', (event) => {
             break;
         }
         case 'wikiExtensionAddPageToReadingList:showResult': {
-            const {urlString, resString} = event.message;
-            showAddPageToListResult(popover, tab, new URL(urlString), JSON.parse(resString));
+            const {urlString, titleString, resString} = event.message;
+            showAddPageToListResult(popover, tab, new URL(urlString), titleString, JSON.parse(resString));
             break;
         }
         case 'wikiExtensionAddPageToReadingList:showError': {
