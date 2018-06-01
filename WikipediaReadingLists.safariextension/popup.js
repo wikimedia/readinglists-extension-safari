@@ -109,9 +109,16 @@ function showLoginPrompt(popover, tab, url) {
 function showAddToListSuccessMessage(popover, tab, url, title) {
     return geti18nMessages(url.origin, [ MESSAGE_KEYS.success ])
     .then(messages => {
-        const message = messages[MESSAGE_KEYS.success].replace('$1', decodeURIComponent(title).replace(/_/g, ' '));
+        const placeholder = '$1';
         const doc = popover.contentWindow.document;
-        doc.getElementById('successText').textContent = message;
+        const successTextContainer = doc.getElementById('successText');
+        const titleElem = document.createElement('b');
+        titleElem.textContent = decodeURIComponent(title).replace(/_/g, ' ');
+        const message = messages[MESSAGE_KEYS.success];
+        successTextContainer.textContent = message;
+        const newTextNode = successTextContainer.firstChild.splitText(message.indexOf(placeholder));
+        newTextNode.deleteData(0, placeholder.length);
+        successTextContainer.insertBefore(titleElem, newTextNode);
         show(popover, 'addToListSuccessContainer');
     });
 }
