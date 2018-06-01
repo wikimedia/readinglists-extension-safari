@@ -23,9 +23,9 @@ function parseTitleFromUrl(href) {
 
 function addPageToDefaultList(url, listId, token) {
     return Promise.resolve(parseTitleFromUrl(document.querySelector('link[rel=canonical]').href))
-    .then(title => fetch(readingListPostEntryUrlForOrigin(url.origin, listId, token), getAddToListPostOptions(url, title)))
+    .then(title => fetch(readingListPostEntryUrlForOrigin(url.origin, listId, token), getAddToListPostOptions(url, title))
     .then(res => res.json())
-    .then(res => dispatchShow('showResult', {urlString: url.href, resString: JSON.stringify(res)}));
+    .then(res => dispatchShow('showResult', {urlString: url.href, titleString: title, resString: JSON.stringify(res)})));
 }
 
 function getReadingListsUrlForOrigin(origin, next) {
@@ -65,7 +65,7 @@ function mobileToCanonicalHost(url) {
 }
 
 function getAddToListPostBody(url, title) {
-    return `project=${mobileToCanonicalHost(url).origin}&title=${encodeURIComponent(title)}`;
+    return `project=${mobileToCanonicalHost(url).origin}&title=${title}`;
 }
 
 function getAddToListPostOptions(url, title) {
