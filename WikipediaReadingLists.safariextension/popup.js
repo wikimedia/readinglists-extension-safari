@@ -1,7 +1,4 @@
-function getPopover() {
-    return safari.extension.toolbarItems.find(item => item.identifier === 'wikiAddToReadingList').popover;
-}
-
+// XXX: Keep in sync with injected.js
 const MESSAGE_KEYS = {
     enableSync: 'readinglists-browser-enable-sync-prompt',
     entryLimitExceeded: 'readinglists-browser-list-entry-limit-exceeded',
@@ -12,62 +9,8 @@ const MESSAGE_KEYS = {
     success: 'readinglists-browser-add-entry-success'
 };
 
-const ALLMESSAGES_QUERY = {
-    action: 'query',
-    format: 'json',
-    formatversion: '2',
-    meta: 'allmessages',
-    amenableparser: ''
-};
-
-function objToQueryString(obj) {
-    return Object.keys(obj).map(key => `${key}=${obj[key]}`).join('&');
-}
-
-function geti18nMessageUrl(origin, keys) {
-    return `${origin}/w/api.php?${objToQueryString(Object.assign(ALLMESSAGES_QUERY, { ammessages: keys.join('|') }))}`;
-}
-
-function fetchBundledMessagesForLang(lang) {
-    return fetch(`${safari.extension.baseURI}i18n/${lang}.json`);
-}
-
-function getBundledMessage(lang, keys) {
-    return fetchBundledMessagesForLang(lang).then(res => res.json()).then(res => {
-        const result = {};
-        keys.forEach(key => {
-            result[key] = res[key];
-        });
-        return result;
-    });
-}
-
-/**
- * Get UI messages from the MediaWiki API (in the user's preferred UI lang), falling back to bundled
- * English strings if this fails.
- * @param {string} origin the origin of the site URL
- * @param {Array<string>} keys message keys to request
- */
-function geti18nMessages(origin, keys) {
-    return fetch(geti18nMessageUrl(origin, keys), { credentials: 'omit' })
-    .then(res => {
-        if (!res.ok) {
-            throw res;
-        } else {
-            return res.json();
-        }
-    })
-    .then(res => {
-        if (res.query && res.query.allmessages && res.query.allmessages.length) {
-            const result = {};
-            res.query.allmessages.forEach(messageObj => {
-                result[messageObj.name] = messageObj.content;
-            });
-            return result;
-        } else {
-           return getBundledMessage('en', keys);
-        }
-    });
+function getPopover() {
+    return safari.extension.toolbarItems.find(item => item.identifier === 'wikiAddToReadingList').popover;
 }
 
 function resetContentDivs(doc) {
@@ -95,87 +38,87 @@ function showLoginPage(url, tab) {
     tab.url = loginUrl;
 }
 
-function showLoginPrompt(popover, tab, url) {
-    return geti18nMessages(url.origin, [ MESSAGE_KEYS.loginPrompt, MESSAGE_KEYS.loginButtonText ])
-    .then(messages => {
-        const doc = popover.contentWindow.document;
-        doc.getElementById('loginPromptText').textContent = messages[MESSAGE_KEYS.loginPrompt];
-        doc.getElementById('loginButton').textContent = messages[MESSAGE_KEYS.loginButtonText];
-        doc.getElementById('loginButton').onclick = () => showLoginPage(url, tab);
-        show(popover, 'loginPromptContainer');
-    });
-}
-
-function showAddToListSuccessMessage(popover, tab, url, title) {
-    return geti18nMessages(url.origin, [ MESSAGE_KEYS.success ])
-    .then(messages => {
-        const placeholder = '$1';
-        const doc = popover.contentWindow.document;
-        const successTextContainer = doc.getElementById('successText');
-        const titleElem = document.createElement('b');
-        titleElem.textContent = decodeURIComponent(title).replace(/_/g, ' ');
-        const message = messages[MESSAGE_KEYS.success];
-        successTextContainer.textContent = message;
-        const newTextNode = successTextContainer.firstChild.splitText(message.indexOf(placeholder));
-        newTextNode.deleteData(0, placeholder.length);
-        successTextContainer.insertBefore(titleElem, newTextNode);
-        show(popover, 'addToListSuccessContainer');
-    });
-}
-
-function showAddToListFailureMessage(popover, tab, url, res) {
+function showAddToListSuccessMessage(popover, tab, url, title, messages) {
+    const placeholder = '$1';
     const doc = popover.contentWindow.document;
-    return geti18nMessages(url.origin, [
-        MESSAGE_KEYS.enableSync,
-        MESSAGE_KEYS.infoLinkText,
-        MESSAGE_KEYS.entryLimitExceeded,
-        MESSAGE_KEYS.errorIntro
-    ])
-    .then(messages => {
-        let message;
-        if (res.title === 'readinglists-db-error-not-set-up') {
-            message = messages[MESSAGE_KEYS.enableSync];
-            const learnMoreLink = doc.getElementById('learnMoreLink');
-            learnMoreLink.textContent = messages[MESSAGE_KEYS.infoLinkText];
-            learnMoreLink.onclick = () => safari.application.activeBrowserWindow.openTab().url = learnMoreLink.href;
-            doc.getElementById('learnMoreLinkContainer').style.display = 'block';
-        } else if (res.title === 'readinglists-db-error-entry-limit') {
-            const maxEntries = si.query.general['readinglists-config'].maxEntriesPerList;
-            message = messages[MESSAGE_KEYS.entryLimitExceeded].replace('$1', maxEntries.toString());
-        } else {
-            const detail = res.detail ? res.detail : res.title ? res.title : res.type ? res.type : typeof res === 'object' ? JSON.stringify(res) : res;
-            message = messages[MESSAGE_KEYS.errorIntro].replace('$1', detail);
-        }
-        doc.getElementById('failureReason').textContent = message;
-        show(popover, 'addToListFailedContainer');
-    });
+    const successTextContainer = doc.getElementById('successText');
+    const titleElem = document.createElement('b');
+    titleElem.textContent = decodeURIComponent(title).replace(/_/g, ' ');
+    const message = messages[MESSAGE_KEYS.success];
+    successTextContainer.textContent = message;
+    const newTextNode = successTextContainer.firstChild.splitText(message.indexOf(placeholder));
+    newTextNode.deleteData(0, placeholder.length);
+    successTextContainer.insertBefore(titleElem, newTextNode);
+    show(popover, 'addToListSuccessContainer');
 }
 
-function showAddPageToListResult(popover, tab, url, title, res) {
+function showLoginPrompt(popover, tab, url, messages) {
+    const doc = popover.contentWindow.document;
+    doc.getElementById('loginPromptText').textContent = messages[MESSAGE_KEYS.loginPrompt];
+    doc.getElementById('loginButton').textContent = messages[MESSAGE_KEYS.loginButtonText];
+    doc.getElementById('loginButton').onclick = () => showLoginPage(url, tab);
+    show(popover, 'loginPromptContainer');
+}
+
+function showEnableSync(popover, tab, url, messages) {
+    const doc = popover.contentWindow.document;
+    const learnMoreLink = doc.getElementById('learnMoreLink');
+    doc.getElementById('failureReason').textContent = messages[MESSAGE_KEYS.enableSync];
+    learnMoreLink.textContent = messages[MESSAGE_KEYS.infoLinkText];
+    learnMoreLink.onclick = () => safari.application.activeBrowserWindow.openTab().url = learnMoreLink.href;
+    doc.getElementById('learnMoreLinkContainer').style.display = 'block';
+    show(popover, 'addToListFailedContainer');
+}
+
+function showEntryLimitExceeded(popover, tab, messages) {
+    const doc = popover.contentWindow.document;
+    doc.getElementById('failureReason').textContent = messages[MESSAGE_KEYS.entryLimitExceeded].replace('$1', messages.entryLimit);
+    show(popover, 'addToListFailedContainer');
+}
+
+function showGenericErrorMessage(popover, tab, err, messages) {
+    const doc = popover.contentWindow.document;
+    const detail = err.detail ? err.detail : err.title ? err.title : err.type ? err.type : typeof err === 'object' ? JSON.stringify(err) : err;
+    doc.getElementById('failureReason').textContent = messages[MESSAGE_KEYS.errorIntro].replace('$1', detail);
+    show(popover, 'addToListFailedContainer');
+}
+
+function showAddPageToListResult(popover, tab, url, title, res, messages) {
     if (res.id) {
-        showAddToListSuccessMessage(popover, tab, url, title);
+        showAddToListSuccessMessage(popover, tab, url, title, messages);
     } else {
-        showAddToListFailureMessage(popover, tab, url, res);
+        showGenericErrorMessage(popover, tab, res, messages);
     }
 }
 
 safari.application.addEventListener('message', (event) => {
     const popover = getPopover();
     const tab = safari.application.activeBrowserWindow.activeTab;
+    const prefix = 'wikiExtensionAddPageToReadingList';
     switch (event.name) {
-        case 'wikiExtensionAddPageToReadingList:showLoginPrompt': {
-            const {urlString} = event.message;
-            showLoginPrompt(popover, tab, new URL(urlString));
+        case `${prefix}:showAddPageToListResult`: {
+            const {urlString, titleString, resString, msgString} = event.message;
+            showAddPageToListResult(popover, tab, new URL(urlString), titleString, JSON.parse(resString), JSON.parse(msgString));
             break;
         }
-        case 'wikiExtensionAddPageToReadingList:showResult': {
-            const {urlString, titleString, resString} = event.message;
-            showAddPageToListResult(popover, tab, new URL(urlString), titleString, JSON.parse(resString));
+        case `${prefix}:showLoginPrompt`: {
+            const {urlString, msgString} = event.message;
+            showLoginPrompt(popover, tab, new URL(urlString), JSON.parse(msgString));
             break;
         }
-        case 'wikiExtensionAddPageToReadingList:showError': {
-            const {urlString, errString} = event.message;
-            showAddToListFailureMessage(popover, tab, new URL(urlString), JSON.parse(errString));
+        case `${prefix}:showEnableSync`: {
+            const {urlString, msgString} = event.message;
+            showEnableSync(popover, tab, new URL(urlString), JSON.parse(msgString));
+            break;
+        }
+        case `${prefix}:showEntryLimitExceeded`: {
+            const {msgString} = event.message;
+            showEntryLimitExceeded(popover, tab, JSON.parse(msgString));
+            break;
+        }
+        case `${prefix}:showGenericErrorMessage`: {
+            const {msgString, errString} = event.message;
+            showGenericErrorMessage(popover, tab, JSON.parse(msgString), JSON.parse(errString));
             break;
         }
     }
