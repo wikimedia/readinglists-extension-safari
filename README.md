@@ -3,8 +3,6 @@ A Safari extension for users of synchronized reading lists to add a Wikimedia wi
 
 Adds a toolbar button that can be clicked to add the current page to the default reading list for the logged in user.
 
-__IMPORTANT__: Using this extension requires selecting the "keep me logged in" option when logging in to Wikipedia. 
-
 See [debug installation instructions](https://developer.apple.com/library/content/documentation/Tools/Conceptual/SafariExtensionGuide/UsingExtensionBuilder/UsingExtensionBuilder.html).
 
 ## i18n message fetching
