@@ -5,7 +5,7 @@
 	<key>Author</key>
 	<string>Wikimedia Foundation</string>
 	<key>Builder Version</key>
-	<string>13605.2.8</string>
+	<string>13606.2.11</string>
 	<key>CFBundleDisplayName</key>
 	<string>Wikipedia Reading Lists</string>
 	<key>CFBundleIdentifier</key>
@@ -76,16 +76,7 @@
 			<key>Allowed Domains</key>
 			<array>
 				<string>*.wikipedia.org</string>
-				<string>*.wikidata.org</string>
 				<string>*.wikivoyage.org</string>
-				<string>*.wiktionary.org</string>
-				<string>*.wikibooks.org</string>
-				<string>*.mediawiki.org</string>
-				<string>*.wikisource.org</string>
-				<string>*.wikiversity.org</string>
-				<string>*.wikinews.org</string>
-				<string>*.wikiquote.org</string>
-				<string>*.wikimedia.org</string>
 			</array>
 			<key>Include Secure Pages</key>
 			<true/>
