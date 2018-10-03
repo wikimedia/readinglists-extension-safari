@@ -176,6 +176,16 @@ function handleError(url, err) {
     }
 }
 
+function getPageNamespace() {
+    const nodes = document.querySelectorAll('script');
+    for (let i = 0; i < nodes.length; i++) {
+        const match = /"wgNamespaceNumber":\s*(\d+)/.exec(nodes[i].innerText);
+        if (match) {
+            return parseInt(match[1], 10);
+        }
+    }
+}
+
 safari.self.addEventListener('message', (event) => {
     if (event.name === 'wikiExtensionAddPageToReadingList') {
         const urlString = event.message;
@@ -183,5 +193,7 @@ safari.self.addEventListener('message', (event) => {
             const url = new URL(urlString);
             handleClick(url).catch(err => handleError(url, err));
         }
+    } else if (event.name === 'wikiExtensionGetPageNamespace') {
+        safari.self.tab.dispatchMessage('wikiExtensionFoundPageNamespace', { ns: getPageNamespace() });
     }
 }, false);
